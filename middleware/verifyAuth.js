@@ -3,6 +3,8 @@ import jwt from 'jsonwebtoken'
 const verifyToken = (req, res, next) => {
   const authHeader = req.headers.authorization;
 
+  console.log('auth header is ----------- ', authHeader);
+  
   if (!authHeader || !authHeader.startsWith("Bearer "))
     return res.status(401).json({ message: "Access denied. No token provided." });
 

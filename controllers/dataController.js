@@ -123,13 +123,15 @@ export const getMyDatasets = async (req, res) => {
     res.status(200).json({
       count: datasets.length,
       datasets: datasets.map(ds => ({
-        id: ds._id,
-        name: ds.name,
-        source: ds.source,
+        id: ds?._id,
+        name: ds?.name,
+        source: ds?.source,
         rowCount: ds.rows.length,
-        row: ds.rows,
-        headers : ds.headers,
-        uploadedAt: ds.uploadedAt
+        row: ds?.rows,
+        headers : ds?.headers,
+        uploadedAt: ds?.uploadedAt,
+        sheetUrl : ds?.sheetUrl ,
+        lastSyncedAt : ds?.lastSyncedAt
       }))
     });
   } catch (err) {

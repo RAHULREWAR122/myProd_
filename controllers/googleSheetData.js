@@ -69,10 +69,7 @@ export const googleSheetData = async (req, res) => {
         sheetUrl: sheetUrl,
         headers,
         rows,
-        rowCount,
-        uploadedAt: new Date(),
         lastSyncedAt: new Date(),
-        syncCount: 1
       });
 
       await dataset.save();
@@ -93,7 +90,6 @@ export const googleSheetData = async (req, res) => {
   }
 };
 
-// New endpoint specifically for syncing/refreshing existing sheets
 export const syncGoogleSheet = async (req, res) => {
   const { datasetId } = req.params;
 
@@ -112,7 +108,7 @@ export const syncGoogleSheet = async (req, res) => {
       return res.status(400).json({ message: "Sheet URL not found in dataset" });
     }
 
-    // Extract spreadsheet ID and fetch fresh data
+    
     const regex = /\/d\/([a-zA-Z0-9-_]+)/;
     const match = dataset.sheetUrl.match(regex);
     const spreadsheetId = match[1];
@@ -123,11 +119,9 @@ export const syncGoogleSheet = async (req, res) => {
     const headers = Object.keys(rows[0] || {});
     const rowCount = rows.length;
 
-    // Store previous data for comparison
     const previousRowCount = dataset.rowCount;
     const previousHeaders = dataset.headers;
     
-    // Update dataset
     dataset.headers = headers;
     dataset.rows = rows;
     dataset.rowCount = rowCount;
@@ -136,13 +130,13 @@ export const syncGoogleSheet = async (req, res) => {
     
     await dataset.save();
 
-    // Calculate changes
     const rowsChanged = rowCount - previousRowCount;
     const headersChanged = JSON.stringify(headers) !== JSON.stringify(previousHeaders);
     
     res.status(200).json({
       message: "Sheet synced successfully",
       datasetId: dataset._id,
+      success : true,
       rowCount,
       headers,
       syncCount: dataset.syncCount,
@@ -157,41 +151,12 @@ export const syncGoogleSheet = async (req, res) => {
     });
   } catch (error) {
     console.error("Sheet sync error:", error.message);
-    res.status(500).json({ message: "Failed to sync sheet", error: error.message });
+    res.status(500).json({ message: "Failed to sync sheet", error: error.message , success : false });
   }
 };
 
-// Get all user's sheets with their sync status
-export const getUserSheets = async (req, res) => {
-  try {
-    const sheets = await DATASET.find({ 
-      userId: req.user.id, 
-      source: "sheet"
-    }).select('sheetUrl headers rowCount uploadedAt lastSyncedAt syncCount').sort({ lastSyncedAt: -1 });
 
-    const formattedSheets = sheets.map(sheet => ({
-      id: sheet._id,
-      url: sheet.sheetUrl,
-      rowCount: sheet.rowCount,
-      columnCount: sheet.headers.length,
-      uploadedAt: sheet.uploadedAt,
-      lastSyncedAt: sheet.lastSyncedAt,
-      syncCount: sheet.syncCount || 1,
-      headers: sheet.headers
-    }));
 
-    res.status(200).json({
-      message: "Sheets retrieved successfully",
-      sheets: formattedSheets,
-      total: sheets.length
-    });
-  } catch (error) {
-    console.error("Get sheets error:", error.message);
-    res.status(500).json({ message: "Failed to retrieve sheets", error: error.message });
-  }
-};
-
-// Delete a sheet dataset
 export const deleteSheet = async (req, res) => {
   const { datasetId } = req.params;
 

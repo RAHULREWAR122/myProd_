@@ -13,20 +13,11 @@ const datasetSchema = new mongoose.Schema({
       return this.source === 'sheet';
     }
   },
-  rowCount: {
-    type: Number,
-    default: function() {
-      return this.rows ? this.rows.length : 0;
-    }
-  },
   lastSyncedAt: {
     type: Date,
     default: Date.now
   },
-  syncCount: {
-    type: Number,
-    default: 1
-  }
+  
 }, {
   timestamps: true
 });
