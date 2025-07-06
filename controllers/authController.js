@@ -36,6 +36,24 @@ export const register = async (req, res) => {
 };
 
 
+// export const login = async (req, res) => {
+//   const { email, password } = req.body;
+
+//   try {
+//     const user = await User.findOne({ email });
+//     if (!user || user.provider !== "local") {
+//       return res.status(404).json({ message: "User not found or invalid login method" });
+//     }
+
+//     const isMatch = await bcrypt.compare(password, user.password);
+//     if (!isMatch) return res.status(401).json({ message: "Invalid information provide" });
+
+//     const token = generateToken(user._id);
+//     res.status(200).json({ token, user });
+//   } catch (err) {
+//     res.status(500).json({ message: "Login error", error: err.message });
+//   }
+// };
 export const login = async (req, res) => {
   const { email, password } = req.body;
 
@@ -49,7 +67,31 @@ export const login = async (req, res) => {
     if (!isMatch) return res.status(401).json({ message: "Invalid information provide" });
 
     const token = generateToken(user._id);
-    res.status(200).json({ token, user });
+    
+    // Set HTTP-only cookies
+    res.cookie('authToken', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'PROD',
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000 
+    });
+    
+    res.cookie('userData', JSON.stringify({
+      id: user._id,
+      email: user.email,
+      name: user.name,
+    }), {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'PROD',
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000 
+    });
+    
+    res.status(200).json({ 
+      success: true,
+      token, 
+      user
+    });
   } catch (err) {
     res.status(500).json({ message: "Login error", error: err.message });
   }

@@ -28,7 +28,6 @@ export const askAssistant = async (req, res) => {
       });
     }
 
-    // Check if question is "personal" or data-related
     const lowerQ = question.toLowerCase().trim();
     const personalIntent = [
       "my file", "my data", "my dashboard", "my upload", "i uploaded",
@@ -42,7 +41,7 @@ export const askAssistant = async (req, res) => {
     if (personalIntent) {
       // Require authentication for personal data requests
       if (!userId) {
-        return res.status(401).json({
+        return res.status(200).json({
           answer: "🔐 To access your personal data and uploaded files, please log in first. I can only provide information about your data when you're authenticated.",
           requiresAuth: true
         });
