@@ -11,7 +11,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 app.use(cors({
-  origin: ['http://localhost:4000'],
+  origin: ['http://localhost:4000' , 'https://startlytics-gi2w.vercel.app/'],
   credentials: true
 }));
 app.use(express.json());
