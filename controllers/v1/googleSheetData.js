@@ -1,6 +1,6 @@
 import axios from "axios";
 import csv from "csvtojson";
-import DATASET from "../models/Dataset.js";
+import DATASET from "../../models/Dataset.js";
 
 
 export const googleSheetData = async (req, res) => {

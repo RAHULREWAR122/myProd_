@@ -2,9 +2,9 @@
 import express from 'express';
 import multer from 'multer';
 import path from 'path';
-import uploadFile from '../controllers/dataController.js';
-import verifyToken from '../middleware/verifyAuth.js'; 
-import { getMyDatasets ,getDatasetById , deleteDatasetById } from '../controllers/dataController.js';
+import uploadFile from '../../controllers/v1/dataController.js';
+import {isAuthenticated} from '../../middleware/verifyAuth.js'; 
+import { getMyDatasets ,getDatasetById , deleteDatasetById } from '../../controllers/v1/dataController.js';
 const router = express.Router();
 
 
@@ -29,9 +29,9 @@ const fileFilter = (req, file, cb) => {
 const upload = multer({ storage, fileFilter });
 
 
-router.post("/upload", verifyToken,  upload.any(), uploadFile);
+router.post("/upload", isAuthenticated,  upload.any(), uploadFile);
 
-router.get("/alldatasets", verifyToken, getMyDatasets);
-router.get("/:id", verifyToken, getDatasetById);
-router.delete("/:id", verifyToken, deleteDatasetById);
+router.get("/alldatasets", isAuthenticated, getMyDatasets);
+router.get("/:id", isAuthenticated, getDatasetById);
+router.delete("/:id", isAuthenticated, deleteDatasetById);
 export default router;

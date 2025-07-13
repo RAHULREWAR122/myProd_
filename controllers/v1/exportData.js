@@ -1,7 +1,7 @@
 import ExcelJS from 'exceljs'
 import PDFDocument from 'pdfkit'
 import mongoose from 'mongoose'
-import DATASHEET from '../models/Dataset.js';
+import DATASHEET from '../../models/Dataset.js';
 
 export const exportDataset = async (req, res) => {
   try {
