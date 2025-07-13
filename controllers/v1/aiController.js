@@ -1,7 +1,7 @@
 import dotenv from 'dotenv';
 dotenv.config();
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import DATASHEET from '../models/Dataset.js';
+import DATASHEET from '../../models/Dataset.js';
 
 const genAI = new GoogleGenerativeAI( process.env.GEMINI_API_KEY );
 
@@ -11,7 +11,7 @@ export const getAISummary = async ( req, res ) => {
             _id: req.params.datasetId,
             userId: req.user.id
         } );
-d
+
         if ( !dataset ) {
             return res.status( 404 ).json( { message: "Dataset not found" } );
         }
