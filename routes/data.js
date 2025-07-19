@@ -33,5 +33,5 @@ router.post("/upload", verifyToken,  upload.any(), uploadFile);
 
 router.get("/alldatasets", verifyToken, getMyDatasets);
 router.get("/:id", verifyToken, getDatasetById);
-router.delete("/:id", verifyToken, deleteDatasetById);
+router.delete("/dataset/:id", verifyToken, deleteDatasetById);
 export default router;

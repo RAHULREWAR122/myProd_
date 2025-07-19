@@ -173,12 +173,12 @@ export const deleteDatasetById = async (req, res) => {
     });
 
     if (!deleted) {
-      return res.status(404).json({ message: "Dataset not found or already deleted" });
+      return res.status(404).json({success : false , message: "Dataset not found or already deleted" });
     }
 
-    res.status(200).json({ message: "Dataset deleted successfully" });
+    return res.status(200).json({ success : true, message: "Dataset deleted successfully" });
   } catch (err) {
-    res.status(500).json({ message: "Failed to delete dataset", error: err.message });
+   return res.status(500).json({success : false , message: "Failed to delete dataset", error: err.message });
   }
 };
 
