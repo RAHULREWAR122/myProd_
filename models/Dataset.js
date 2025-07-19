@@ -13,6 +13,7 @@ const datasetSchema = new mongoose.Schema({
       return this.source === 'sheet';
     }
   },
+  fileUrl : { type: String},
   lastSyncedAt: {
     type: Date,
     default: Date.now

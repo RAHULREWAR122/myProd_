@@ -36,24 +36,6 @@ export const register = async (req, res) => {
 };
 
 
-// export const login = async (req, res) => {
-//   const { email, password } = req.body;
-
-//   try {
-//     const user = await User.findOne({ email });
-//     if (!user || user.provider !== "local") {
-//       return res.status(404).json({ message: "User not found or invalid login method" });
-//     }
-
-//     const isMatch = await bcrypt.compare(password, user.password);
-//     if (!isMatch) return res.status(401).json({ message: "Invalid information provide" });
-
-//     const token = generateToken(user._id);
-//     res.status(200).json({ token, user });
-//   } catch (err) {
-//     res.status(500).json({ message: "Login error", error: err.message });
-//   }
-// };
 export const login = async (req, res) => {
   const { email, password } = req.body;
 
@@ -125,3 +107,94 @@ export const googleLogin = async (req, res) => {
     res.status(500).json({ message: "Google login failed", error: err.message });
   }
 };
+
+
+export const verifyEmail = async (req, res) => {
+  const { email } = req.body;
+  
+  try {
+    // Check if email is provided
+    if (!email) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Email is required" 
+      });
+    }
+
+    const user = await User.findOne({ email, provider: "local" });
+    
+    if (!user) {
+      return res.status(404).json({ 
+        success: false, 
+        message: "Email not found or invalid account type" 
+      });
+    }
+
+    res.status(200).json({ 
+      success: true, 
+      message: "Email verified successfully",
+      userId: user._id 
+    });
+
+  } catch (err) {
+    res.status(500).json({ 
+      success: false, 
+      message: "Email verification error", 
+      error: err.message 
+    });
+  }
+};
+
+export const updatePassword = async (req, res) => {
+  const { email, password, confirmPassword } = req.body;
+
+  try {
+    if (!email || !password || !confirmPassword) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Email, password, and confirm password are required" 
+      });
+    }
+
+    if (password !== confirmPassword) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Password and confirm password do not match" 
+      });
+    }
+
+if (password.length < 6) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Password must be at least 6 characters long" 
+      });
+    }
+
+    const user = await User.findOne({ email, provider: "local" });
+    
+    if (!user) {
+      return res.status(404).json({ 
+        success: false, 
+        message: "User not found or invalid account type" 
+      });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    await User.findByIdAndUpdate(user._id, { 
+      password: hashedPassword 
+    });
+
+    res.status(200).json({ 
+      success: true, 
+      message: "Password updated successfully" 
+    });
+
+  } catch (err) {
+    res.status(500).json({ 
+      success: false, 
+      message: "Password update error", 
+      error: err.message 
+    });
+  }
+}
