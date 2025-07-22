@@ -4,9 +4,9 @@ dotenv.config();
 const mongo_uri = 'mongodb+srv://rrewar75:Rahul@cluster0.bain4cp.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0'
 const connectDB = async () => {
   try {
-    if (mongo_uri) {
-      throw new Error("MONGO_URI not defined in environment variables");
-    }
+    // if (mongo_uri) {
+    //   throw new Error("MONGO_URI not defined in environment variables");
+    // }
     
     await mongoose.connect(mongo_uri, {
       useNewUrlParser: true,
