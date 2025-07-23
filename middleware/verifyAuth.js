@@ -12,11 +12,11 @@ const verifyToken = (req, res, next) => {
   
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    console.log('Decoded JWT payload:', decoded); // Add this line
+    console.log('Decoded JWT payload:', decoded);
     req.user = decoded; 
     next();
   } catch (err) {
-    console.log('JWT verification error:', err.message); // Add this line
+    // console.log('JWT verification error:', err.message); 
     return res.status(403).json({ message: "Invalid or expired token." });
   }
 };
