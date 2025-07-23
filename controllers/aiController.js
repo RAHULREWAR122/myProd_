@@ -67,6 +67,9 @@ Remember: Start with "Welcome to Startlytics" and follow the exact bullet point 
 
     } catch (err) {
         console.error('Error in getAISummary:', err);
+         if (err.status === 503) {
+          return { error: "AI Insights temporarily unavailable. Please try again later." };
+        }
         res.status(500).json({ 
             message: "AI Summary failed", 
             error: err.message 
