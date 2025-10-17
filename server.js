@@ -8,7 +8,7 @@ import cookieParser from 'cookie-parser';
 import { createServer } from 'http';
 //import { Server } from 'socket.io';
 
-import appRoutes from './app.js';
+import app from './app.js';
 import connectDB from './config/mongo.js';
 //import { connectRedis } from './config/redis.js';
 //import { initSocket } from './utils/socketConnectionManger.js';
@@ -17,9 +17,9 @@ import connectDB from './config/mongo.js';
 //import RazorPay from 'razorpay';
 //import stripe from 'stripe';
 //import { Client, Environment } from 'square';
-
 // Create express app and server
-const app = express();
+
+
 const httpServer = createServer(app);
 
 // -------------------- MIDDLEWARE --------------------
@@ -30,9 +30,6 @@ app.use(cors({
   origin: ['http://localhost:3000', 'http://localhost:4000'],
   credentials: true,
 }));
-
-// -------------------- API ROUTES --------------------
-app.use('/api', appRoutes);
 
 app.get('/', (req, res) => {
   res.send('✅ Greeting backend is running!');

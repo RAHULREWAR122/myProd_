@@ -4,117 +4,184 @@ import { fileURLToPath } from 'url';
 import Papa from 'papaparse';
 import xlsx from 'xlsx';
 import DATASHEET from '../../models/Dataset.js';
-
-
+import { catchAsyncError } from '../../middleware/catchAsyncError.js';
+import ErrorHandler from '../../utils/errorHandler.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const uploadFile = async (req, res) => {
-  
- if (!req.files) return res.status(400).json({ message: "No file uploaded" });
-  
-  if (!req.files || req.files.length === 0) {
-    return res.status(400).json({ message: "No file uploaded" });
+// ⛳ Helper to delete a file safely
+const deleteFileIfExists = (filePath) => {
+  if (fs.existsSync(filePath)) {
+    fs.unlinkSync(filePath);
   }
-  const file = req.files[0];
+};
+
+export const uploadFile = catchAsyncError(async (req, res, next) => {
+  // Check authentication first
+  if (!req.user || !req.user.id) {
+    return next(new ErrorHandler("Authentication required", 401));
+  }
+
+  if (!req.file) {
+    return next(new ErrorHandler("No file uploaded", 400));
+  }
+
+  const file = req.file;
   
-  const filePath = path.join(__dirname, "../uploads", file.filename);
-  const ext = path.extname(req.files[0].originalname).toLowerCase();  
+  // Enhanced debugging
+  console.log("🔍 File object inspection:", {
+    originalname: file.originalname,
+    mimetype: file.mimetype,
+    size: file.size,
+    path: file.path,
+    filename: file.filename,
+    destination: file.destination,
+    fieldname: file.fieldname,
+    encoding: file.encoding
+  });
 
-  try {
-    let data = [], headers = [];
-
-
-    const storeAndRespond = async (processedData, processedHeaders) => {
+  // Improved file path resolution
+  let filePath;
+  const uploadDir = '../../uploads';
+  
+  if (file.path) {
+    filePath = file.path;
+  } else if (file.filename) {
+    filePath = path.join(uploadDir, file.filename);
+  } else if (file.destination && file.originalname) {
+    // Fallback: use destination + originalname
+    filePath = path.join(file.destination, file.originalname);
+  } else {
+    // Last resort: create filename with timestamp
+    const timestamp = Date.now();
+    const ext = path.extname(file.originalname);
+    const baseName = path.basename(file.originalname, ext);
+    const filename = `${timestamp}-${baseName}${ext}`;
+    filePath = path.join(uploadDir, filename);
+    
+    // Write buffer to file if available
+    if (file.buffer) {
       try {
-        const newDataset = await DATASHEET.create({
-          userId: req.user.id,
-          name: req.files.originalname,
-          source: ext === ".csv" ? "csv" : "docs",
-          headers: processedHeaders,
-          rows: processedData,
-        });
-
-        // Clean up uploaded file
-        fs.unlinkSync(filePath);
-
-        return res.status(201).json({
-          message: "File uploaded & parsed successfully",
-          datasetId: newDataset._id,
-          rowCount: processedData.length,
-          headers: processedHeaders,
-        });
-      } catch (dbError) {
-        // Clean up file even if DB operation fails
-        if (fs.existsSync(filePath)) {
-          fs.unlinkSync(filePath);
+        // Ensure directory exists
+        if (!fs.existsSync(uploadDir)) {
+          fs.mkdirSync(uploadDir, { recursive: true });
         }
-        throw dbError;
+        fs.writeFileSync(filePath, file.buffer);
+      } catch (writeError) {
+        console.error("Error writing file:", writeError);
+        return next(new ErrorHandler("Failed to save uploaded file", 500));
       }
-    };
+    } else {
+      return next(new ErrorHandler("Uploaded file is missing path/filename and buffer", 400));
+    }
+  }
 
-    // Handle CSV files
-    if (ext === ".csv") {
-      const csv = fs.readFileSync(filePath, "utf8");
-      
+  // Verify file exists
+  if (!fs.existsSync(filePath)) {
+    return next(new ErrorHandler("Uploaded file not found at expected path", 400));
+  }
+
+  const ext = path.extname(file.originalname).toLowerCase();
+
+  console.log("📁 Uploaded file:", {
+    name: file.originalname,
+    mimetype: file.mimetype,
+    size: file.size,
+    path: filePath,
+    extension: ext,
+    userId: req.user.id // Added for debugging
+  });
+
+  // ⚙️ Function to store in DB and respond
+  const storeAndRespond = async (rows, headers) => {
+    try {
+      const newDataset = await DATASHEET.create({
+        userId: req.user.id,
+        name: file.originalname,
+        source: ext === ".csv" ? "csv" : "docs",
+        headers,
+        rows,
+      });
+
+      deleteFileIfExists(filePath);
+
+      return res.status(201).json({
+        message: "✅ File uploaded & parsed successfully",
+        datasetId: newDataset._id,
+        rowCount: rows.length,
+        headers,
+      });
+    } catch (dbError) {
+      deleteFileIfExists(filePath);
+      throw dbError;
+    }
+  };
+
+  // 📥 Parse CSV
+  if (ext === ".csv") {
+    try {
+      const csvContent = fs.readFileSync(filePath, "utf8");
+
       return new Promise((resolve, reject) => {
-        Papa.parse(csv, {
+        Papa.parse(csvContent, {
           header: true,
           skipEmptyLines: true,
           dynamicTyping: true,
           complete: async (result) => {
             try {
-              data = result.data;
-              headers = result.meta.fields || [];
+              const data = result.data;
+              const headers = result.meta.fields || [];
+
+              if (data.length === 0 || headers.length === 0) {
+                deleteFileIfExists(filePath);
+                return next(new ErrorHandler("CSV file is empty or malformed", 400));
+              }
+
               await storeAndRespond(data, headers);
               resolve();
-            } catch (error) {
-              reject(error);
+            } catch (err) {
+              reject(err);
             }
           },
-          error: (error) => {
-            reject(new Error(`CSV parse error: ${error.message}`));
-          }
+          error: (parseError) => {
+            deleteFileIfExists(filePath);
+            reject(new ErrorHandler(`CSV parse error: ${parseError.message}`, 400));
+          },
         });
       });
+    } catch (readError) {
+      deleteFileIfExists(filePath);
+      return next(new ErrorHandler(`Failed to read CSV file: ${readError.message}`, 400));
     }
+  }
 
-    // Handle Excel files
-    else if (ext === ".xlsx" || ext === ".xls") {
+  // 📥 Parse Excel
+  else if (ext === ".xlsx" || ext === ".xls") {
+    try {
       const workbook = xlsx.readFile(filePath);
       const sheetName = workbook.SheetNames[0];
       const sheet = workbook.Sheets[sheetName];
-      const sheetData = xlsx.utils.sheet_to_json(sheet, { defval: "" });
+      const data = xlsx.utils.sheet_to_json(sheet, { defval: "" });
 
-      if (sheetData.length === 0) {
-        fs.unlinkSync(filePath);
-        return res.status(400).json({ message: "Excel file is empty or has no data" });
+      if (data.length === 0) {
+        deleteFileIfExists(filePath);
+        return next(new ErrorHandler("Excel file is empty or has no data", 400));
       }
 
-      data = sheetData;
-      headers = Object.keys(data[0] || {});
+      const headers = Object.keys(data[0]);
       await storeAndRespond(data, headers);
+    } catch (err) {
+      deleteFileIfExists(filePath);
+      return next(new ErrorHandler(`Excel parse error: ${err.message}`, 400));
     }
-
-    else {
-      fs.unlinkSync(filePath);
-      return res.status(400).json({ message: "Unsupported file format" });
-    }
-
-  } catch (err) {
-    if (fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath);
-    }
-    
-    console.error("Upload error:", err);
-    return res.status(500).json({ 
-      message: "Upload error", 
-      error: err.message 
-    });
   }
-};
 
-
+  // ❌ Unsupported format
+  else {
+    deleteFileIfExists(filePath);
+    return next(new ErrorHandler("Unsupported file format. Only CSV and Excel files are allowed.", 400));
+  }
+});
 
 export const getMyDatasets = async (req, res) => {
   try {
@@ -184,4 +251,4 @@ export const deleteDatasetById = async (req, res) => {
 
 
 
-export default uploadFile;
+// export default uploadFile;

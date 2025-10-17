@@ -2,8 +2,10 @@
 import express from 'express';
 import multer from 'multer';
 import path from 'path';
-import uploadFile from '../../controllers/v1/dataController.js';
+import {uploadFile} from '../../controllers/v1/dataController.js';
 import {isAuthenticated} from '../../middleware/verifyAuth.js'; 
+import { singleUpload } from '../../middleware/multer.js';
+
 import { getMyDatasets ,getDatasetById , deleteDatasetById } from '../../controllers/v1/dataController.js';
 const router = express.Router();
 
@@ -29,7 +31,7 @@ const fileFilter = (req, file, cb) => {
 const upload = multer({ storage, fileFilter });
 
 
-router.post("/upload", isAuthenticated,  upload.any(), uploadFile);
+router.post("/upload", isAuthenticated,  singleUpload, uploadFile);
 
 router.get("/alldatasets", isAuthenticated, getMyDatasets);
 router.get("/:id", isAuthenticated, getDatasetById);
