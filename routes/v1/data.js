@@ -1,9 +1,11 @@
 import express from 'express';
 import multer from 'multer';
 import path from 'path';
-import uploadFile from '../controllers/dataController.js';
-import verifyToken from '../middleware/verifyAuth.js'; 
-import { getMyDatasets ,getDatasetById , deleteDatasetById } from '../controllers/dataController.js';
+import {uploadFile} from '../../controllers/v1/dataController.js';
+import {isAuthenticated} from '../../middleware/verifyAuth.js'; 
+import { singleUpload } from '../../middleware/multer.js';
+
+import { getMyDatasets ,getDatasetById , deleteDatasetById } from '../../controllers/v1/dataController.js';
 const router = express.Router();
 
 const storage = multer.diskStorage({
@@ -42,9 +44,9 @@ const fileSize = (error, req, res, next) => {
   next(error);
 };
 
-router.post("/upload", verifyToken, upload.any(), fileSize ,uploadFile);
-router.get("/alldatasets", verifyToken, getMyDatasets);
-router.get("/:id", verifyToken, getDatasetById);
-router.delete("/dataset/:id", verifyToken, deleteDatasetById);
+router.post("/upload", isAuthenticated,  singleUpload, uploadFile);
 
+router.get("/alldatasets", isAuthenticated, getMyDatasets);
+router.get("/:id", isAuthenticated, getDatasetById);
+router.delete("/:id", isAuthenticated, deleteDatasetById);
 export default router;

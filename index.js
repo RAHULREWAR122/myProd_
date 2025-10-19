@@ -2,7 +2,7 @@ import express from 'express'
 import cors from 'cors'
 import dotenv from 'dotenv'
 import connectDB from './config/mongo.js';
-import routes from './routes/index.js'
+import routes from './app.js'
 import cookieParser from 'cookie-parser'
 dotenv.config();
 const app = express();

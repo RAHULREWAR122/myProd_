@@ -6,6 +6,10 @@ const userSchema = new mongoose.Schema({
   password: String, 
   provider: { type: String, default: "local" }, 
   googleId: String,
+  profilePicture: { type: String, default: "https://res.cloudinary.com/dz1qj3x8h/image/upload/v1709301234/defaultProfilePicture.png" },
+
+  verificationToken: String,
+
   startupType: String,
   createdAt: { type: Date, default: Date.now }
 });
