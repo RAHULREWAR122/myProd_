@@ -5,9 +5,9 @@ import ErrorHandler from "../utils/errorHandler.js";
 export const isAuthenticated = catchAsyncError(async (req, res, next) => {
   let token;
   const { authorization } = req.headers;
-  console.log('====================================');
-  console.log('is token ---------- ' , authorization);
-  console.log('====================================');
+  // console.log('====================================');
+  // console.log('is token for summary ---------- ' , authorization);
+  // console.log('====================================');
   if (!authorization || !authorization.startsWith("Bearer"))
     return next(new ErrorHandler("please provide the token", 401));
 
@@ -32,7 +32,8 @@ export const isAuthenticated = catchAsyncError(async (req, res, next) => {
   // if (req.user.status === "deleted") {
   //   return next(new ErrorHandler("You have no longer active account", 401));
   // }
-  console.log('reached to next -------------------', token);
+  
+  // console.log('reached with summary ---------');
   
   next();
 });
