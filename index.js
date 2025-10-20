@@ -26,9 +26,6 @@ app.get("/", (req, res) => {
 
 
 const PORT = 5000;
-connectDB();
-
-export default app;
-// connectDB().then(() => {
-//   app.listen(PORT, () => console.log(`🚀 Server running on port http://localhost:${PORT}`));
-// });
+connectDB().then(() => {
+  app.listen(PORT, () => console.log(`🚀 Server running on port http://localhost:${PORT}`));
+});
